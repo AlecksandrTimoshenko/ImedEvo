@@ -26,6 +26,7 @@ import javax.transaction.Transactional;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -179,7 +180,9 @@ public class UserService {
 
     String fileName = "";
     String link = "";
-    String uploadImageFolder = "testfolder";
+
+//    @Value("${imed.image.folder}")
+    String uploadImageFolder = "/home/imed_image/user_images";
 
     Logger logger = LogManager.getLogger(getClass());
     Map<String, Object> map = new HashMap<>();
