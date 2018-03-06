@@ -86,6 +86,7 @@ public class ClinicService {
     clinic.setAddress(geoposition.getAddress());
     clinic.setCoordinatesLatitude(geoposition.getLat());
     clinic.setCoordinatesLongitude(geoposition.getLng());
+    clinic.setLogo("https://imed.od.ua/assets/images/default-placeholder.png");
     clinic.setDateOfRegistration(LocalDate.now().toString());
     map.put("status", HospitalStatus.REGISTRATION_OK);
     map.put("clinic", clinicRepository.save(clinic));
