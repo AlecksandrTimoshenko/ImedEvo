@@ -74,6 +74,7 @@ public class UserService {
       throw new UserNotFoundException();
     }
     user.setUserRoles(rolesService.getUserRoles(id));
+    user.setImage(imageRepository.findByUserId(id));
     user.setPassword("not displayed");
     return user;
   }
@@ -181,29 +182,38 @@ public class UserService {
     String fileName = "";
     String link = "";
 
-//    @Value("${imed.image.folder}")
-    String uploadImageFolder = "/home/imed_image/user_images";
+    String imageLink = "https://imed.od.ua/assets/images/";
+    String uploadImageFolder = "src/main/resources/static/assets/images";
 
     Logger logger = LogManager.getLogger(getClass());
     Map<String, Object> map = new HashMap<>();
-    if (!imageFile.isEmpty()) {
-      try {
-        if (!Files.exists(Paths.get(uploadImageFolder))) {
-          Files.createDirectory(Paths.get(uploadImageFolder));
-        }
 
-        fileName = imageFile.getOriginalFilename();
-        Files.copy(imageFile.getInputStream(),
-            Paths.get(uploadImageFolder,
-                String.format("(%s)%s", Instant.now().getEpochSecond(), fileName)));
-        link = uploadImageFolder + "/" + fileName;
-        imageRepository.save(new Image(userId, link));
-        map.put("status", UserStatus.IMAGE_UPLOAD_SUCCESS);
-      } catch (IOException ex) {
-        logger.error(ex.getMessage(), ex);
-      }
-    } else {
+    if (imageFile.isEmpty()) {
       map.put("status", UserStatus.IMAGE_IS_EMPTY);
+      return map;
+    }
+
+    try {
+      if (!Files.exists(Paths.get(uploadImageFolder))) {
+        Files.createDirectory(Paths.get(uploadImageFolder));
+      }
+
+      fileName = imageFile.getOriginalFilename();
+      Files.copy(imageFile.getInputStream(),
+          Paths.get(uploadImageFolder,
+              String.format("(%s)%s", Instant.now().getEpochSecond(), fileName)));
+      link = imageLink + fileName;
+
+      Image image = imageRepository.findByUserId(userId);
+      if (image != null) {
+        image.setLink(link);
+        imageRepository.save(image);
+        map.put("status", UserStatus.IMAGE_UPLOAD_SUCCESS);
+      } else {
+        map.put("status", UserStatus.NOT_FOUND);
+      }
+    } catch (IOException ex) {
+      logger.error(ex.getMessage(), ex);
     }
     return map;
   }
@@ -233,7 +243,7 @@ public class UserService {
     System.out.println(email);
     AppUser user = userRepository.findByUsername(changePassword.getEmail());
     if (user.getUsername().equals(email)) {
-      user.setPassword(changePassword.getPassword());
+      user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
       map.put("status", UserStatus.PASSWORD_CHANGE_OK);
       map.put("user", userRepository.save(user));
     } else {

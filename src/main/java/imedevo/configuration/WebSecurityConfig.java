@@ -60,6 +60,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         .antMatchers(HttpMethod.POST, "/forgot/reset").permitAll()
         .antMatchers(HttpMethod.POST, "/forgot/newpassword").permitAll()
         .antMatchers(HttpMethod.GET, "/search/byanyparams").permitAll()
+        .antMatchers(HttpMethod.GET, "/blog/getall").permitAll()
+        .antMatchers(HttpMethod.GET, "/blog/*").permitAll()
+        .antMatchers(HttpMethod.GET, "/comments/bydoctors/*").permitAll()
+        .antMatchers(HttpMethod.GET, "/comments/byclinics/*").permitAll()
+        .antMatchers(HttpMethod.GET, "/discount/getall").permitAll()
+        .antMatchers(HttpMethod.GET, "/discount/*").permitAll()
+        .antMatchers(HttpMethod.GET, "/discount/byclinics").permitAll()
+        .antMatchers(HttpMethod.GET, "/discount/bydoctors").permitAll()
         .anyRequest().authenticated()
         .and()
         .formLogin()
@@ -80,4 +88,5 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
     auth.userDetailsService(customUserDetailService).passwordEncoder(bCryptPasswordEncoder);
   }
+
 }
