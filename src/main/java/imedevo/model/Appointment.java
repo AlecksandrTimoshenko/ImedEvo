@@ -1,7 +1,5 @@
 package imedevo.model;
 
-import java.time.LocalDateTime;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -15,16 +13,19 @@ public class Appointment {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private long id;
+  private Long id;
 
   @Column(name = "user_id")
-  private long userId;
+  private Long userId;
 
   @Column(name = "doctor_id")
-  private long doctorId;
+  private Long doctorId;
 
-  @Column(name = "start_time")
-  private LocalDateTime startTime;
+  @Column(name = "time")
+  private String time;
+
+  @Column(name = "date")
+  private String date;
 
   @Column(name = "is_approved")
   private boolean isApproved;
@@ -32,49 +33,62 @@ public class Appointment {
   @Column(name = "status")
   private String status;
 
-  public Appointment(long id, long userId, long doctorId, LocalDateTime startTime,
-      boolean isAproved, String status) {
+  @Column(name = "doctor_name")
+  private String doctorName;
+
+  public Appointment(Long id, Long userId, Long doctorId, String time, String date,
+      boolean isAproved, String status, String doctorName) {
     this.id = id;
     this.userId = userId;
     this.doctorId = doctorId;
-    this.startTime = startTime;
+    this.time = time;
+    this.date = date;
     this.isApproved = isAproved;
     this.status = status;
+    this.doctorName = doctorName;
   }
 
   public Appointment() {
   }
 
-  public long getId() {
+  public Long getId() {
     return id;
   }
 
-  public void setId(long id) {
+  public void setId(Long id) {
     this.id = id;
   }
 
-  public void setUserId(long userId) {
+  public void setUserId(Long userId) {
     this.userId = userId;
   }
 
-  public long getUserId() {
+  public Long getUserId() {
     return userId;
   }
 
-  public long getDoctorId() {
+  public Long getDoctorId() {
     return doctorId;
   }
 
-  public void setDoctorId(long doctorId) {
+  public void setDoctorId(Long doctorId) {
     this.doctorId = doctorId;
   }
 
-  public LocalDateTime getStartTime() {
-    return startTime;
+  public String getTime() {
+    return time;
   }
 
-  public void setStartTime(LocalDateTime startTime) {
-    this.startTime = startTime;
+  public void setTime(String time) {
+    this.time = time;
+  }
+
+  public String getDate() {
+    return date;
+  }
+
+  public void setDate(String date) {
+    this.date = date;
   }
 
   public boolean isApproved() {
@@ -93,14 +107,25 @@ public class Appointment {
     this.status = status;
   }
 
+  public String getDoctorName() {
+    return doctorName;
+  }
+
+  public void setDoctorName(String doctorName) {
+    this.doctorName = doctorName;
+  }
+
   @Override
   public String toString() {
     return "Appointment{" +
         "id=" + id +
         ", userId=" + userId +
         ", doctorId=" + doctorId +
-        ", startTime=" + startTime +
+        ", time='" + time + '\'' +
+        ", date='" + date + '\'' +
         ", isApproved=" + isApproved +
+        ", status='" + status + '\'' +
+        ", doctorName='" + doctorName + '\'' +
         '}';
   }
 }

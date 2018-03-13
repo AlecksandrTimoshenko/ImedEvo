@@ -1,6 +1,7 @@
 package imedevo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import imedevo.service.AppointmentService;
 
 @RestController
 @RequestMapping("/appointments")
+@PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'CLINIC_ADMIN', 'SUPER_ADMIN')")
 public class AppointmentController {
 
   @Autowired
@@ -30,20 +32,20 @@ public class AppointmentController {
     return appointmentService.getByUserId(id);
   }
 
-  @GetMapping("bydoctors/{id}")
+  @GetMapping("/bydoctors/{id}")
   public List<Appointment> getByDoctorId(@PathVariable long id) {
     return appointmentService.getByDoctorId(id);
   }
 
   @PostMapping("/addappointment")
   public Map<String, Object> addAppointment(@RequestBody Appointment appointment) {
-    return appointmentService.addAppoinsment(appointment);
+    return appointmentService.addAppointment(appointment);
   }
 
   @PutMapping("/updateappointment")
   public Map<String, Object> updateAppointment(@RequestBody Appointment appointment)
       throws AccessDeniedException {
-    return appointmentService.updateAppoinsment(appointment);
+    return appointmentService.updateAppointment(appointment);
   }
 
   @DeleteMapping("/deleteappointment")

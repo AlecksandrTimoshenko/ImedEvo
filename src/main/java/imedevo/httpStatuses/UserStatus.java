@@ -34,6 +34,8 @@ public enum UserStatus {
   EDIT_PROFILE_SUCCESS(730, "Your profile updated"),
   EDIT_PROFILE_ERROR(731, "Error while editing profile"),
   ADD_USER_OK(732, "Adding user in DataBase OK"),
+  PASSWORD_CHANGE_OK(733, "Password changed!"),
+  PASSWORD_CHANGE_REJECTED(734, "Password change rejected. Empty email or password"),
 
   // comments and  rating
   ADD_COMMENT_SUCCESS(741, "Comment added"),
@@ -52,6 +54,7 @@ public enum UserStatus {
   APPOINTMENT_DELETE(754, "Appointment deleted"),
   APPOINTMENT_INVALID(755, "Appointment invalid"),
   APPOINTMENT_NOT_FOUND(756, "Appointment not found"),
+  APPOINTMENT_EDITORING_ERROR(757, "Editoring error: id missed"),
 
   // favourite doctors
   FAVOURITE_DOCTOR_ADD_OK(770, "Favourite doctor added"),

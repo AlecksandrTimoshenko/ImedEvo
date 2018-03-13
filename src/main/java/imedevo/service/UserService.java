@@ -1,11 +1,13 @@
 package imedevo.service;
 
+import imedevo.configuration.WebSecurityConfig;
 import imedevo.httpStatuses.AccessDeniedException;
 import imedevo.httpStatuses.UserNotFoundException;
 import imedevo.httpStatuses.UserStatus;
+import imedevo.model.AppUser;
+import imedevo.model.ChangePassword;
 import imedevo.model.Image;
 import imedevo.model.Role;
-import imedevo.model.User;
 import imedevo.model.UserRole;
 import imedevo.repository.ImageRepository;
 import imedevo.repository.UserRepository;
@@ -16,7 +18,7 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,10 +26,11 @@ import javax.transaction.Transactional;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.multipart.MultipartFile;
-
 
 @Service
 public class UserService {
@@ -44,57 +47,74 @@ public class UserService {
   @Autowired
   private ImageRepository imageRepository;
 
+  @Autowired
+  private BCryptPasswordEncoder bCryptPasswordEncoder;
+
+  @Autowired
+  WebSecurityConfig webSecurityConfig;
+
+  @Autowired
+  private GeocodingService geocoding;
+
   private final String status = "status";
 
-
-  public List<User> getAll() {
-    List<User> listOfUsers = (List<User>) userRepository.findAll();
-    for (User user : listOfUsers) {
+  public List<AppUser> getAll() {
+    List<AppUser> listOfUsers = (List<AppUser>) userRepository.findAll();
+    for (AppUser user : listOfUsers) {
       user.setUserRoles(rolesService.getUserRoles(user.getId()));
+      user.setPassword("not displayed");
     }
     return listOfUsers;
   }
 
-  public User getById(long id) throws UserNotFoundException {
-    User user = userRepository.findOne(id);
+  public AppUser getById(long id) throws UserNotFoundException {
+    AppUser user = userRepository.findOne(id);
     if (user == null) {
       throw new UserNotFoundException();
     }
     user.setUserRoles(rolesService.getUserRoles(id));
+    user.setImage(imageRepository.findByUserId(id));
+    user.setPassword("not displayed");
     return user;
   }
 
   @Transactional
-  public Map<String, Object> save(User user) {
+  public Map<String, Object> save(AppUser appUser) {
     Map<String, Object> map = new HashMap<>();
 
-    if (user.getEmail() == null) {
+    if (appUser.getUsername() == null) {
       map.put(status, UserStatus.REGISTRATION_ERROR_EMPTY_EMAIL);
       return map;
     }
 
-    if (userRepository.findByEmail(user.getEmail()) != null) {
+    if (userRepository.findByUsername(appUser.getUsername()) != null) {
       map.put(status, UserStatus.REGISTRATION_ERROR_DUPLICATE_USERS);
       return map;
     }
 
-    if (user.getPassword() == null) {
+    if (appUser.getPassword() == null) {
       map.put(status, UserStatus.REGISTRATION_ERROR_INCORRECT_PASSWORD);
       return map;
     }
-    user.setDateOfRegistration(LocalDateTime.now());
-    map.put(status, UserStatus.ADD_USER_OK);
-    map.put("user", userRepository.save(user));
 
-    List<UserRole> userRoles = rolesService.getUserRoles(user.getId());
-    userRoles.add(new UserRole(user.getId(), Role.USER));
+    if (appUser.getCity() != null) {
+      appUser.setCity(geocoding.getGeopositionByAddress(appUser.getCity()).getAddress());
+    }
+
+    appUser.setDateOfRegistration(LocalDate.now().toString());
+
+    map.put(status, UserStatus.ADD_USER_OK);
+    map.put("appUser", userRepository.save(appUser));
+
+    List<UserRole> userRoles = rolesService.getUserRoles(appUser.getId());
+    userRoles.add(new UserRole(appUser.getId(), Role.USER));
     rolesService.save(userRoles);
     map.put("role", userRoles);
     return map;
   }
 
   @Transactional
-  public Map<String, Object> updateUser(User updatedUser) throws UserNotFoundException {
+  public Map<String, Object> updateUser(AppUser updatedUser) throws UserNotFoundException {
     Map<String, Object> map = new HashMap<>();
 
     /** this is security checking */
@@ -104,21 +124,28 @@ public class UserService {
 //      return map;
 //    }
 
-    if (updatedUser.getEmail() != null) {
-      User checkUserFromDb = userRepository.findByEmail(updatedUser.getEmail());
+    if (updatedUser.getUsername() != null) {
+      AppUser checkUserFromDb = userRepository.findByUsername(updatedUser.getUsername());
       if (checkUserFromDb != null && updatedUser.getId() != checkUserFromDb.getId()) {
         map.put(status, UserStatus.EDIT_PROFILE_ERROR);
         return map;
       }
     }
 
-    User userFromDb = userRepository.findOne(updatedUser.getId());
+    AppUser userFromDb = userRepository.findOne(updatedUser.getId());
     if (userFromDb == null) {
       map.put(status, UserStatus.NOT_FOUND);
     } else {
+      if (updatedUser.getCity() != null) {
+        updatedUser.setCity(geocoding.getGeopositionByAddress(updatedUser.getCity()).getAddress());
+      }
       Field[] fields = updatedUser.getClass().getDeclaredFields();
       AccessibleObject.setAccessible(fields, true);
       for (Field field : fields) {
+        if (field.getName().equals("id") || field.getName().equals("password") ||
+            field.getName().equals("dateOfRegistration") || field.getName().equals("userRoles")) {
+          continue;
+        }
         Object userFromDbValue = ReflectionUtils.getField(field, updatedUser);
         if (userFromDbValue != null) {
           ReflectionUtils.setField(field, userFromDb, userFromDbValue);
@@ -151,46 +178,74 @@ public class UserService {
 
   public Map<String, Object> uploadImage(long userId, MultipartFile imageFile) {
 
-    System.out.println("userId = " + userId);
-    System.out.println("file = " + imageFile.getOriginalFilename());
-
     String fileName = "";
     String link = "";
+    String imageLink = "https://imed.od.ua/assets/images/";
+    String uploadImageFolder = "src/main/resources/static/assets/images";
 
     Logger logger = LogManager.getLogger(getClass());
-    String uploadImageFolder = "testfolder";
     Map<String, Object> map = new HashMap<>();
 
-    if (!imageFile.isEmpty()) {
-      try {
-        if (!Files.exists(Paths.get(uploadImageFolder))) {
-          Files.createDirectory(Paths.get(uploadImageFolder));
-        }
-
-        fileName = imageFile.getOriginalFilename();
-        Files.copy(imageFile.getInputStream(),
-            Paths.get(uploadImageFolder,
-                String.format("(%s)%s", Instant.now().getEpochSecond(), fileName)));
-        link = uploadImageFolder + "/" + fileName;
-        imageRepository.save(new Image(userId, link));
-        map.put("status", UserStatus.IMAGE_UPLOAD_SUCCESS);
-      } catch (IOException ex) {
-        logger.error(ex.getMessage(), ex);
-      }
-    } else {
+    if (imageFile.isEmpty()) {
       map.put("status", UserStatus.IMAGE_IS_EMPTY);
+      return map;
+    }
+
+    try {
+      if (!Files.exists(Paths.get(uploadImageFolder))) {
+        Files.createDirectory(Paths.get(uploadImageFolder));
+      }
+
+      fileName = imageFile.getOriginalFilename();
+      Files.copy(imageFile.getInputStream(),
+          Paths.get(uploadImageFolder,
+              String.format("(%s)%s", Instant.now().getEpochSecond(), fileName)));
+      link = imageLink + fileName;
+
+      Image image = imageRepository.findByUserId(userId);
+      if (image != null) {
+        image.setLink(link);
+        imageRepository.save(image);
+        map.put("status", UserStatus.IMAGE_UPLOAD_SUCCESS);
+      } else {
+        map.put("status", UserStatus.NOT_FOUND);
+      }
+    } catch (IOException ex) {
+      logger.error(ex.getMessage(), ex);
     }
     return map;
   }
 
-  public Map<String, Object> login(String email, String password) {
+  public Map<String, Object> login(String username, String password) {
     Map<String, Object> map = new HashMap<>();
-    User user = userRepository.findByEmail(email);
-    if (user == null || !user.getPassword().equals(password)) {
+    AppUser userFromRepository = userRepository.findByUsername(username);
+    if (userFromRepository == null || !bCryptPasswordEncoder
+        .matches(password, userFromRepository.getPassword())) {
       map.put("status", UserStatus.LOGIN_BAD_LOGIN);
     } else {
       map.put("status", UserStatus.LOGIN_OK);
-      map.put("user", user);
+      map.put("user", userFromRepository);
+
+    }
+    return map;
+  }
+
+  public Map<String, Object> changePassword(ChangePassword changePassword)
+      throws AccessDeniedException {
+    Map<String, Object> map = new HashMap<>();
+    if (changePassword.getEmail() == null || changePassword.getPassword() == null) {
+      map.put("status", UserStatus.PASSWORD_CHANGE_REJECTED);
+      return map;
+    }
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    System.out.println(email);
+    AppUser user = userRepository.findByUsername(changePassword.getEmail());
+    if (user.getUsername().equals(email)) {
+      user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+      map.put("status", UserStatus.PASSWORD_CHANGE_OK);
+      map.put("user", userRepository.save(user));
+    } else {
+      throw new AccessDeniedException();
     }
     return map;
   }

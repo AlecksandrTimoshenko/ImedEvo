@@ -1,7 +1,6 @@
 package imedevo.model;
 
 import java.sql.Date;
-import java.time.LocalDateTime;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -18,11 +17,11 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "users")
-public class User {
+public class AppUser {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private long id;
+  private Long id;
 
   @Column(name = "last_name")
   private String lastName;
@@ -37,7 +36,7 @@ public class User {
   private String phone;
 
   @Column(name = "email")
-  private String email;
+  private String username;
 
   @Column(name = "password")
   private String password;
@@ -58,7 +57,7 @@ public class User {
   private Date birthDate;
 
   @Column(name = "date_of_registration")
-  private LocalDateTime dateOfRegistration;
+  private String dateOfRegistration;
 
   @OneToMany(fetch = FetchType.LAZY)
   @JoinTable(
@@ -69,19 +68,19 @@ public class User {
 
   @OneToOne
   @PrimaryKeyJoinColumn
-  Doctor doctor;
+  private Image image;
 
-  public User() {
+  public AppUser() {
   }
 
-  public User(String firstName, String lastName, String phone, String email,
+  public AppUser(String firstName, String lastName, String phone, String username,
       String password, String city, String house, String street, String patronymic, String sex,
-      Date birthDate, Doctor doctor, LocalDateTime dateOfRegistration) {
+      Date birthDate, String dateOfRegistration, Image image) {
     this.lastName = lastName;
     this.firstName = firstName;
     this.patronymic = patronymic;
     this.phone = phone;
-    this.email = email;
+    this.username = username;
     this.password = password;
     this.city = city;
     this.house = house;
@@ -89,19 +88,19 @@ public class User {
     this.patronymic = patronymic;
     this.sex = sex;
     this.birthDate = birthDate;
-    this.doctor = doctor;
     this.dateOfRegistration = dateOfRegistration;
+    this.image = image;
   }
 
   @Override
   public String toString() {
-    return "User{" +
+    return "{" +
         "id=" + id +
         ", lastName='" + lastName + '\'' +
         ", firstName='" + firstName + '\'' +
         ", patronymic='" + patronymic + '\'' +
         ", phone='" + phone + '\'' +
-        ", email='" + email + '\'' +
+        ", username='" + username + '\'' +
         ", city='" + city + '\'' +
         ", house='" + house + '\'' +
         ", street='" + street + '\'' +
@@ -109,11 +108,11 @@ public class User {
         ", birthDate=" + birthDate +
         ", dateOfRegistration=" + dateOfRegistration +
         ", userRoles=" + userRoles +
-        ", doctor=" + doctor +
+        ", image=" + image +
         '}';
   }
 
-  public long getId() {
+  public Long getId() {
     return id;
   }
 
@@ -145,12 +144,12 @@ public class User {
     this.phone = phone;
   }
 
-  public String getEmail() {
-    return email;
+  public String getUsername() {
+    return username;
   }
 
-  public void setEmail(String email) {
-    this.email = email;
+  public void setUsername(String username) {
+    this.username = username;
   }
 
   public String getPassword() {
@@ -217,11 +216,19 @@ public class User {
     this.userRoles = userRoles;
   }
 
-  public LocalDateTime getDateOfRegistration() {
+  public String getDateOfRegistration() {
     return dateOfRegistration;
   }
 
-  public void setDateOfRegistration(LocalDateTime dateOfRegistration) {
+  public void setDateOfRegistration(String dateOfRegistration) {
     this.dateOfRegistration = dateOfRegistration;
+  }
+
+  public Image getImage() {
+    return image;
+  }
+
+  public void setImage(Image image) {
+    this.image = image;
   }
 }

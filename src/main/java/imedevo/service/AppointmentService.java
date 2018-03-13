@@ -35,19 +35,26 @@ public class AppointmentService {
     return appointmentRepository.findByDoctorId(id);
   }
 
-  public Map<String, Object> addAppoinsment(Appointment appointment) {
+  public Map<String, Object> addAppointment(Appointment appointment) {
 
     if (appointment == null) {
       map.put("status", UserStatus.APPOINTMENT_INVALID);
-      return map;
+    } else if (appointment.getUserId() == null || appointment.getDoctorId() == null
+        || appointment.getDate() == null
+        || appointment.getTime() == null) {
+      map.put("status", UserStatus.APPOINTMENT_INVALID);
+    } else {
+      appointment.setStatus("New appointment");
+      appointment
+          .setDoctorName(userRepository.findOne(appointment.getDoctorId()).getFirstName() + " "
+              + userRepository.findOne(appointment.getDoctorId()).getLastName());
+      map.put("status", UserStatus.ADD_NEW_APPOINTMENT_OK);
+      map.put("appointment", appointmentRepository.save(appointment));
     }
-    appointment.setStatus("New appointment");
-    map.put("status", UserStatus.ADD_NEW_APPOINTMENT_OK);
-    map.put("appointment", appointmentRepository.save(appointment));
     return map;
   }
 
-  public Map<String, Object> updateAppoinsment(Appointment updatedAppointment)
+  public Map<String, Object> updateAppointment(Appointment updatedAppointment)
       throws AccessDeniedException {
     /** this is security checking */
 //    if (userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName())
@@ -56,8 +63,18 @@ public class AppointmentService {
 //        .getId() != updatedAppointment.getDoctorId()) {
 //      throw new AccessDeniedException();
 //    }
-
     Map<String, Object> map = new HashMap<>();
+
+    if (updatedAppointment.getId() == null) {
+      map.put("status", UserStatus.APPOINTMENT_EDITORING_ERROR);
+      return map;
+    }
+
+    if (updatedAppointment.getDoctorId() != null) {
+      updatedAppointment.setDoctorName(
+          userRepository.findOne(updatedAppointment.getDoctorId()).getFirstName() + " "
+              + userRepository.findOne(updatedAppointment.getDoctorId()).getLastName());
+    }
 
     Appointment appointmentFromDb = appointmentRepository.findOne(updatedAppointment.getId());
     if (appointmentFromDb == null) {
@@ -66,6 +83,9 @@ public class AppointmentService {
       Field[] fields = updatedAppointment.getClass().getDeclaredFields();
       AccessibleObject.setAccessible(fields, true);
       for (Field field : fields) {
+        if (field.getName().equals("id") || field.getName().equals("userId")) {
+          continue;
+        }
         Object appointmentFromDbValue = ReflectionUtils.getField(field, updatedAppointment);
         if (appointmentFromDbValue != null) {
           ReflectionUtils.setField(field, appointmentFromDb, appointmentFromDbValue);
