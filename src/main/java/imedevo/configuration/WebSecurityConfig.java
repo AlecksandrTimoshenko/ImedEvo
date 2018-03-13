@@ -1,6 +1,5 @@
 package imedevo.configuration;
 
-
 import imedevo.security.JWTAuthenticationFilter;
 import imedevo.security.JWTAuthorizationFilter;
 import imedevo.service.CustomUserDetailService;
@@ -10,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -38,6 +38,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //    web.ignoring()
 //        .antMatchers("/assets/**", "/index.html", "/**", "/bootstrap/**", "/css/**");
 //  }
+
+  @Override
+  public void configure(WebSecurity web) throws Exception {
+    web.ignoring()
+        .antMatchers("/assets/**", "/index.html", "/**", "/bootstrap/**", "/css/**");
+  }
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {

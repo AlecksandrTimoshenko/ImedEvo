@@ -84,6 +84,7 @@ public class DoctorService {
       return map;
     }
 
+
     if (doctor.getEducation() == null || doctor.getEducation().length() < 3) {
       map.put("status", DocStatus.REGISTRATION_ERROR_EMPTY_FIELD_DOCTOR_EDUCATION);
       return map;

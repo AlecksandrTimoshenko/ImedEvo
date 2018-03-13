@@ -1,6 +1,5 @@
 package imedevo.controller;
 
-
 import imedevo.model.Clinic;
 import imedevo.model.Doctor;
 import imedevo.service.SearchService;
@@ -31,6 +30,7 @@ public class SearchController {
 
   @GetMapping("/doctor")
   public List<Doctor> searchDoctor(@RequestParam(name = "params") String params) {
+
     return searchService.findDoctorBySpecializatin(params);
   }
 

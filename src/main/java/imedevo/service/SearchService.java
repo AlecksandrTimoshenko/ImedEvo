@@ -1,6 +1,5 @@
 package imedevo.service;
 
-
 import imedevo.model.Clinic;
 import imedevo.model.Doctor;
 import imedevo.model.Specialization;

@@ -19,6 +19,7 @@ public enum DocStatus {
   REGISTRATION_ERROR_USER_NOT_EXIST(807, "This user does not exist"),
   REGISTRATION_ERROR_DOCTOR_ALREADY(808, "This user already has role DOCTOR"),
 
+
   // login status
   LOGIN_OK(810, "Login success."),
   DOCTOR_NOT_FOUND(811, "This Doctor profile not found."),
